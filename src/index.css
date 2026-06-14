@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --aurora-blue: rgba(0, 242, 254, 0.25);
+  --aurora-purple: rgba(138, 43, 226, 0.25);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #050a10;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* 之前为你打包的全部高级魔改样式原封不动保留 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.08); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+.glass-input:focus {
+  border-color: rgba(32, 184, 219, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  outline: none;
+  box-shadow: 0 0 15px rgba(32, 184, 219, 0.2);
+}
+
+@keyframes aurora-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.aurora-bg-anim {
+  background: radial-gradient(circle at 15% 50%, var(--aurora-blue), transparent 40%),
+              radial-gradient(circle at 85% 30%, var(--aurora-purple), transparent 40%),
+              #050a10;
+  background-size: 200% 200%;
+  animation: aurora-flow 20s ease infinite;
+}
+
+.split-o-container {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  cursor: crosshair;
+  transition: transform 0.3s;
+}
+.split-o-container:hover { transform: scale(1.1); filter: drop-shadow(0 0 10px #20b8db); }
+
+.split-half {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  transition: all 1.2s cubic-bezier(0.8, 0, 0.2, 1);
+  color: #20b8db;
+}
+.split-top { clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.split-bottom { clip-path: polygon(0 0, 100% 100%, 0 100%); }
+
+.split-o-container.torn .split-top {
+  transform: translate(60vw, -60vh) rotate(45deg);
+  opacity: 0;
+}
+.split-o-container.torn .split-bottom {
+  transform: translate(-60vw, 60vh) rotate(-45deg);
+  opacity: 0;
+}
+
+.parallax-wrapper {
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  perspective: 10px;
+}
+
+.img-hover-zoom { transition: transform 0.4s ease; }
+.glass-panel:hover .img-hover-zoom { transform: scale(1.05); }
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.toast-enter { animation: slideInRight 0.3s ease-out forwards; }
+
+@keyframes orbit-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes star-shimmer {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.orbit-slow { animation: orbit-rotate 40s linear infinite; }
+.orbit-reverse { animation: orbit-rotate 25s linear infinite reverse; }
+.star-shimmer { animation: star-shimmer 3s ease-in-out infinite; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.glass-card {
+  background: rgba(4, 8, 20, 0.65);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.glass-card-glow {
+  background: rgba(4, 12, 32, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  box-shadow: 0 0 40px rgba(0, 242, 254, 0.12);
+}
+.brush-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+}
