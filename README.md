@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# 使用方式
+下载Node.js LTS版本
+👉https://nodejs.org/zh-cn\
+```bash
+cd 保存路径/coroc
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+#初始化一个 Vite + React + TypeScript 项目
+npm create vite@latest . -- --template react-ts
 
-Currently, two official plugins are available:
+npm install
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+#安装图标库和图表库
+npm install lucide-react recharts --registry=https://registry.npmmirror.com
 
-## React Compiler
+```
+我使用的是taliwindcss v4,因此安装 Tailwind CSS v4 专用的 PostCSS 插件
+```bash
+npm install @tailwindcss/postcss --save-dev
+```
+检查你的项目根目录下的 postcss.config.js 或 postcss.config.mjs 文件。请将其内容修改为如下格式
+```bash
+// postcss.config.mjs (或者 .js)
+import tailwindcss from '@tailwindcss/postcss';
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+export default {
+  plugins: [
+    tailwindcss,
+  ],
+};
+```
+确保你的 src/index.css (或 App.css) 中使用了 Tailwind v4 的引入方式。删除旧的 @tailwind base; 等指令，改为：
+```bash
+@import "tailwindcss";
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+最后就可以运行环境
+```bash
+npm run dev
 ```
+# 关于gemini的API
+访问这个https://aistudio.google.com/app/api-keys  获取API密钥，填入/src/utils/api.js中的占位部分
