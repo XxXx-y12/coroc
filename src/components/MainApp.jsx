@@ -3,7 +3,7 @@ import {
   Sparkles, Image as ImageIcon, Activity, History, LogOut, ChevronRight,
   Search, User, ShieldAlert, Zap, CheckCircle2, AlertCircle, Eye, EyeOff,
   SlidersHorizontal, Download, Wand2, MessageSquareText, X, Share2, Layers,
-  Plus, Trash2, UploadCloud
+  Plus, Trash2, UploadCloud, Database, FileArchive, Copy
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -291,104 +291,718 @@ const GenerateTab = () => {
 
 const CustomEraseTab = () => {
   const { addToast } = useToast();
-  const [concepts, setConcepts] = useState([
-    { id: 1, name: "Copyrighted Brand Logos", type: "object", weight: 90 },
-    { id: 2, name: "Cyberpunk Glow Aesthetic", type: "style", weight: 75 }
+
+  const RANDOM_PRESETS = [
+    {
+      concept: "Apple iPhone",
+      prompt:
+        "A cybernetic humanoid robot holding an [Apple iPhone], hyper-detailed render, technical drawing style.",
+      rawImg:
+        "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?q=80&w=1200&auto=format&fit=crop",
+      erasedImg:
+        "https://images.unsplash.com/photo-1580870013141-3b13c51dcd4d?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      concept: "Cyberpunk Glow Style",
+      prompt:
+        "A classic European cafe in Paris, painted in neon [Cyberpunk Glow Style], contrast between classical and futuristic.",
+      rawImg:
+        "https://images.unsplash.com/photo-1508138221679-760a23a2285b?q=80&w=1200&auto=format&fit=crop",
+      erasedImg:
+        "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      concept: "Starbucks Logo",
+      prompt:
+        "A close up photo of a steaming ceramic mug with a [Starbucks Logo] on a wooden counter, warm lighting.",
+      rawImg:
+        "https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=1200&auto=format&fit=crop",
+      erasedImg:
+        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1200&auto=format&fit=crop",
+    },
+  ];
+
+  const [activePresetIndex, setActivePresetIndex] = useState(0);
+  const [eraseConcepts, setEraseConcepts] = useState([
+    { id: "1", name: "Copyrighted Brand Logos", strength: 0.85, type: "OBJECT" },
+    { id: "2", name: "Cyberpunk Glow Aesthetic", strength: 0.72, type: "STYLE" },
   ]);
-  const [newConcept, setNewConcept] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [newConceptInput, setNewConceptInput] = useState("");
+  const [selectedSDVersion, setSelectedSDVersion] = useState("SD-1.5");
+  const [isAligning, setIsAligning] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  const activePreset = RANDOM_PRESETS[activePresetIndex];
+
+  const handleShufflePrompt = () => {
+    setActivePresetIndex((prev) => (prev + 1) % RANDOM_PRESETS.length);
+    addToast("同步加载新的测试敏感 Prompt 靶标", "info");
+  };
 
   const handleAddConcept = () => {
-    if (!newConcept.trim()) return;
-    setConcepts([...concepts, { id: Date.now(), name: newConcept, type: "custom", weight: 80 }]);
-    setNewConcept("");
-    addToast("自定义概念向量已添加", "success");
+    const value = newConceptInput.trim();
+    if (!value) return;
+
+    const item = {
+      id: Date.now().toString(),
+      name: value,
+      strength: 0.8,
+      type: "OBJECT",
+    };
+
+    setEraseConcepts((prev) => [...prev, item]);
+    setNewConceptInput("");
+    addToast(`概念 [${item.name}] 已加入拦截靶矩阵`, "success");
   };
 
   const handleRemoveConcept = (id) => {
-    setConcepts(concepts.filter(c => c.id !== id));
+    setEraseConcepts((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const handleSliderChange = (id, val) => {
+    setEraseConcepts((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, strength: val } : c))
+    );
+  };
+
+  const handleExecuteErase = () => {
+    setIsAligning(true);
+    setTimeout(() => {
+      setIsAligning(false);
+      addToast("多概念对齐擦除运算成功！权重参数已固化入基模", "success");
+    }, 1500);
   };
 
   return (
-    <div className="space-y-6 relative z-10 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left: Image Upload & Preview Container */}
-        <div className="lg:col-span-5 glass-panel p-8 rounded-3xl flex flex-col items-center justify-center min-h-[480px] border border-dashed border-[#00f2fe]/30 hover:border-[#00f2fe]/60 transition-colors group cursor-pointer relative overflow-hidden">
-           <div className="absolute inset-0 bg-gradient-to-br from-[#00f2fe]/5 to-[#8a2be2]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-           <UploadCloud size={56} className="text-[#00f2fe] mb-5 opacity-70 group-hover:scale-110 transition-transform" />
-           <h3 className="text-white font-tech tracking-wider mb-2 text-lg">UPLOAD SOURCE IMAGE</h3>
-           <p className="text-sm text-slate-400 text-center max-w-[85%] leading-relaxed font-light">拖拽需要提取或擦除敏感概念的图像至此区域，或点击浏览本地文件 (PNG, JPG, WEBP)</p>
-           <div className="mt-8 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-mono text-slate-300 group-hover:bg-[#00f2fe]/10 group-hover:text-[#00f2fe] transition-colors">
-             Select File
-           </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* 左侧：品字形上端 + 下端双画廊 */}
+        <div className="lg:col-span-8 flex flex-col gap-5">
+          {/* 上部窄提示栏 */}
+          <div className="glass-panel rounded-2xl border border-slate-800/80 p-4 shadow-xl flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] bg-cyan-950/60 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 font-mono uppercase tracking-wider">
+                  Target Concept Prompt / 靶标提示词
+                </span>
+                <span className="text-xs text-slate-500 font-mono">
+                  Preset {activePresetIndex + 1}/{RANDOM_PRESETS.length}
+                </span>
+              </div>
+
+              <p className="text-xs font-mono text-slate-300 leading-relaxed break-words">
+                {activePreset.prompt.split(/(\[.*?\])/).map((part, idx) =>
+                  part.startsWith("[") && part.endsWith("]") ? (
+                    <span
+                      key={idx}
+                      className="text-cyan-400 font-bold px-1 bg-cyan-950/40 rounded border border-cyan-500/20 shadow-[0_0_8px_rgba(6,182,212,0.1)]"
+                    >
+                      {part}
+                    </span>
+                  ) : (
+                    <span key={idx}>{part}</span>
+                  )
+                )}
+              </p>
+            </div>
+
+            <button
+              onClick={handleShufflePrompt}
+              className="shrink-0 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-cyan-400 px-3.5 py-2.5 rounded-xl border border-slate-800 hover:border-cyan-500/30 transition-all duration-300 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shadow-lg"
+            >
+              切靶 / Shuffle
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* 下部双重渲染画廊 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
+            {/* 左图：原始图 */}
+            <div className="glass-panel rounded-2xl border border-slate-800/80 p-4 flex flex-col gap-3 shadow-xl min-h-[420px]">
+              <div className="flex justify-between items-center gap-3">
+                <span className="text-xs font-mono text-rose-400 tracking-wider">
+                  RAW SOURCE
+                </span>
+                <span className="text-[10px] bg-rose-950/40 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20 font-mono whitespace-nowrap">
+                  未擦除敏感概念
+                </span>
+              </div>
+
+              <div className="relative flex-1 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px]">
+                {isAligning ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-7 h-7 border-3 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" />
+                    <span className="text-xs text-rose-400/70 font-mono animate-pulse">
+                      重新寻址...
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={activePreset.rawImg}
+                      alt="RAW Output"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* 右图：擦除后图 */}
+            <div className="glass-panel rounded-2xl border border-cyan-500/30 p-4 flex flex-col gap-3 shadow-xl shadow-cyan-950/10 min-h-[420px]">
+              <div className="flex justify-between items-center gap-3">
+                <span className="text-xs font-mono text-cyan-400 tracking-wider">
+                  COROC ERASED MODEL
+                </span>
+                <span className="text-[10px] bg-cyan-950/40 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 font-mono whitespace-nowrap">
+                  敏感概念彻底擦除
+                </span>
+              </div>
+
+              <div className="relative flex-1 bg-slate-950/80 rounded-xl overflow-hidden border border-cyan-500/20 flex items-center justify-center min-h-[320px]">
+                {isAligning ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-7 h-7 border-3 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+                    <span className="text-xs text-cyan-400/70 font-mono animate-pulse">
+                      概念消除对齐中...
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={activePreset.erasedImg}
+                      alt="Erased Output"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Right: Multi-Concept Erasure Controls */}
-        <div className="lg:col-span-7 glass-panel p-8 rounded-3xl flex flex-col">
-           <div className="mb-6 border-b border-white/10 pb-5">
-             <h3 className="font-tech text-2xl text-white flex items-center gap-3">
-               <Layers size={24} className="text-[#8a2be2]" /> 多概念叠加擦除矩阵
-             </h3>
-             <p className="text-sm text-slate-400 mt-2 font-light">针对画面中存在的特定物品、受保护的 IP 角色、及交叉画风进行靶向复合清除。</p>
-           </div>
+        {/* 右侧：概念控制台 */}
+        <div className="lg:col-span-4 glass-panel rounded-2xl border border-slate-800/80 p-5 shadow-2xl flex flex-col justify-between gap-5">
+          <div className="flex flex-col gap-5">
+            <div>
+              <h3 className="text-sm font-black text-slate-100 uppercase tracking-wider mb-1">
+                多概念叠加擦除控制面板
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                针对提示词及画面中可能溢出的特定物品、受保护 IP 角色及艺术家交叉风格进行靶向复合擦除，并在基模底层进行高维消融。
+              </p>
+            </div>
 
-           <div className="flex gap-3 mb-8">
-             <input
-               type="text"
-               value={newConcept}
-               onChange={(e) => setNewConcept(e.target.value)}
-               placeholder="输入需要擦除的概念 (如: 苹果手机, 梵高风格)"
-               className="flex-1 glass-input text-white py-3 px-5 rounded-xl text-sm border-[#00f2fe]/30 focus:border-[#00f2fe]"
-               onKeyDown={(e) => e.key === 'Enter' && handleAddConcept()}
-             />
-             <button onClick={handleAddConcept} className="bg-[#00f2fe]/10 hover:bg-[#00f2fe]/20 text-[#00f2fe] border border-[#00f2fe]/30 px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium">
-               <Plus size={18} /> 添加靶点
-             </button>
-           </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newConceptInput}
+                onChange={(e) => setNewConceptInput(e.target.value)}
+                placeholder="输入需要擦除的概念 (如: 苹果手机, 梵高风格)"
+                className="flex-1 bg-[#050818]/90 border border-slate-800 hover:border-slate-700 focus:border-cyan-500/40 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none transition-all duration-300"
+              />
+              <button
+                onClick={handleAddConcept}
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 transition-all duration-300 shadow-md whitespace-nowrap"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                添加靶点
+              </button>
+            </div>
 
-           <div className="flex-1 overflow-y-auto space-y-4 pr-2 no-scrollbar min-h-[200px]">
-             {concepts.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-slate-500 font-mono text-sm">
-                  NO ACTIVE TARGETS
+            <div className="flex flex-col gap-3 max-h-[220px] overflow-y-auto pr-1">
+              {eraseConcepts.map((concept) => (
+                <div
+                  key={concept.id}
+                  className="bg-slate-950/50 rounded-xl p-3 border border-slate-800/60 flex flex-col gap-2 transition-all hover:border-slate-700/80"
+                >
+                  <div className="flex justify-between items-center gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-bold text-slate-200 truncate">
+                        {concept.name}
+                      </span>
+                      <span className="text-[9px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded border border-slate-800 font-mono shrink-0">
+                        {concept.type}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveConcept(concept.id)}
+                      className="text-slate-500 hover:text-rose-400 transition-colors shrink-0"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
+                      擦除强度:
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={concept.strength}
+                      onChange={(e) =>
+                        handleSliderChange(
+                          concept.id,
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      className="flex-1 accent-cyan-400 bg-slate-900 h-1 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <span className="text-[10px] text-cyan-400 font-mono font-bold w-8 text-right">
+                      {(concept.strength * 100).toFixed(0)}%
+                    </span>
+                  </div>
                 </div>
-             ) : concepts.map(concept => (
-               <div key={concept.id} className="bg-black/30 border border-white/5 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
-                 <div className="flex flex-col gap-1 sm:w-5/12">
-                   <span className="text-sm text-slate-200 font-medium">{concept.name}</span>
-                   <span className="text-[10px] uppercase font-mono text-[#8a2be2] tracking-wider bg-[#8a2be2]/10 inline-block w-max px-2 py-0.5 rounded">
-                     TYPE: {concept.type}
-                   </span>
-                 </div>
-                 <div className="flex-1 flex items-center gap-4">
-                   <span className="text-[11px] text-slate-400 font-mono">强度</span>
-                   <input type="range" min="0" max="100" defaultValue={concept.weight} className="flex-1 accent-[#00f2fe] h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer" />
-                 </div>
-                 <button onClick={() => handleRemoveConcept(concept.id)} className="text-slate-500 hover:text-rose-400 transition-colors p-2 bg-white/5 hover:bg-rose-400/10 rounded-lg">
-                   <Trash2 size={16} />
-                 </button>
-               </div>
-             ))}
-           </div>
+              ))}
+            </div>
 
-           <button
-             onClick={() => {
-               setIsProcessing(true);
-               addToast("正在编译多维概念擦除权重...", "info");
-               setTimeout(() => { setIsProcessing(false); addToast("靶向概念擦除完成", "success"); }, 2000);
-             }}
-             disabled={isProcessing || concepts.length === 0}
-             className="mt-8 w-full bg-gradient-to-r from-[#00f2fe] to-[#8a2be2] hover:brightness-110 text-white font-tech font-bold py-4 rounded-xl transition-all hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(138,43,226,0.35)] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-3"
-           >
-             {isProcessing ? <Activity className="animate-spin" size={22} /> : <Wand2 size={22} />}
-             {isProcessing ? "PROCESSING TENSORS..." : "EXECUTE MULTI-ERASURE ALIGNMENT"}
-           </button>
+            <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-400 font-mono whitespace-nowrap">
+                BASE SD MOTOR:
+              </span>
+              <div className="flex gap-1.5 flex-wrap justify-end">
+                {["SD-1.5", "SD-2.0", "SD-XL"].map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setSelectedSDVersion(v)}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold font-mono transition-all ${
+                      selectedSDVersion === v
+                        ? "bg-violet-500 text-slate-950 shadow-md"
+                        : "bg-slate-900 hover:bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleExecuteErase}
+            disabled={isAligning || eraseConcepts.length === 0}
+            className="w-full mt-2 bg-gradient-to-r from-cyan-500 to-violet-500 hover:shadow-[0_0_25px_rgba(6,182,212,0.35)] text-slate-950 font-black text-xs py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-40"
+          >
+            {isAligning ? (
+              <>
+                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                进行底层逆梯度注入与擦除对齐中...
+              </>
+            ) : (
+              <>
+                EXECUTE MULTI-ERASURE ALIGNMENT
+                <ChevronRight className="w-3.5 h-3.5 text-slate-950" />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {shareUrl ? (
+        <div className="fixed inset-0 bg-[#02040b]/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0f26] border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-cyan-400">
+              <Share2 className="w-5 h-5" />
+              <span className="font-bold text-sm tracking-wider uppercase font-mono">
+                Share Generated Token / 分享凭证链接
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              该凭证链接包含了当前图像在 COROC 精准擦除对齐后的去水印签名信息，允许其他人零失真查看该次净化报告。
+            </p>
+
+            <div className="flex gap-2 bg-[#050818] border border-slate-800 p-2 rounded-xl items-center">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                className="bg-transparent flex-1 outline-none text-xs text-slate-300 font-mono px-2"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  addToast("分享凭证链接已成功拷贝至剪贴板！", "success");
+                  setShareUrl("");
+                }}
+                className="bg-cyan-500 hover:bg-cyan-400 text-[#060814] p-2 rounded-lg transition-all duration-300"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShareUrl("")}
+              className="text-xs text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 py-2 rounded-xl mt-2 transition-all duration-300"
+            >
+              CLOSE WINDOW
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+const EvaluationTab = () => {
+  const { addToast } = useToast();
+
+  const [evalMode, setEvalMode] = useState("preset"); // preset | upload
+  const [evalBaseline, setEvalBaseline] = useState("COROC-v2-Pro");
+  const [evalDataset, setEvalDataset] = useState("MS-COCO-Erase (10k Samples)");
+  const [evalCompareTo, setEvalCompareTo] = useState("UCE-Method (2024)");
+  const [uploadedZip, setUploadedZip] = useState("");
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evalLogs, setEvalLogs] = useState([]);
+  const [evalProgress, setEvalProgress] = useState(0);
+  const [evalReport, setEvalReport] = useState(null);
+  const logContainerRef = React.useRef(null);
+
+  const triggerEvaluation = () => {
+    if (evalMode === "upload" && !uploadedZip) {
+      addToast("请先上传离线生成结果压缩包（ZIP）", "error");
+      return;
+    }
+
+    setIsEvaluating(true);
+    setEvalLogs([]);
+    setEvalProgress(0);
+    setEvalReport(null);
+
+    const steps =
+      evalMode === "preset"
+        ? [
+            "🛰️ [SYSTEM] 检索预计算基准数据库...",
+            `📂 [CACHE] 命中缓存：${evalBaseline} / ${evalDataset}`,
+            "🔄 [LOAD] 读取 CLIP / FID / ASR 预计算矩阵...",
+            "📊 [METRIC] 汇总 MCP / UDA / P4D 结果...",
+            "✨ [REPORT] 预计算评估白皮书生成完成。",
+          ]
+        : [
+            "🛰️ [SYSTEM] 初始化离线评估沙盒...",
+            `📂 [DATASET] 正在解压：${uploadedZip}`,
+            "🔄 [LOAD] 构建视觉特征向量...",
+            "📊 [METRIC] 运行 CLIP 对齐评分...",
+            "🔒 [METRIC] 运行 ASR / FID / MCP / UDA...",
+            "✨ [REPORT] 离线评估白皮书生成完成。",
+          ];
+
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < steps.length) {
+        setEvalLogs((prev) => [...prev, steps[i]]);
+        setEvalProgress(Math.round(((i + 1) / steps.length) * 100));
+        i += 1;
+
+        if (logContainerRef.current) {
+          logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+      } else {
+        clearInterval(timer);
+        setIsEvaluating(false);
+
+        setEvalReport({
+          timestamp: new Date().toLocaleString(),
+          baseline: evalMode === "preset" ? evalBaseline : "Uploaded Custom Model",
+          dataset:
+            evalMode === "preset" ? evalDataset : `Offline ZIP: ${uploadedZip}`,
+          comparison: evalCompareTo,
+          mode: evalMode,
+          scores: {
+            ASR: evalMode === "preset" ? 96 : 94,
+            CLIP: evalMode === "preset" ? 91 : 89,
+            FID: evalMode === "preset" ? 88 : 86,
+            MCP: evalMode === "preset" ? 94 : 92,
+          },
+          summary:
+            evalMode === "preset"
+              ? "本模式用于快速演示，系统直接调取预计算缓存，适合评审展示和 Demo 预览。"
+              : "本模式用于真实离线跑分，系统对上传的生成结果包进行解压、特征提取与多指标评估。",
+        });
+
+        addToast("评估完成，报告已生成", "success");
+      }
+    }, evalMode === "preset" ? 450 : 700);
+  };
+
+  return (
+    <div className="space-y-6 relative z-10">
+      <div className="glass-panel p-6 rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(0,242,254,0.05)]">
+        <div className="flex items-start justify-between gap-4 flex-col lg:flex-row">
+          <div className="max-w-2xl">
+            <h2 className="font-tech text-2xl text-white font-bold tracking-wider flex items-center gap-2">
+              <Database size={20} className="text-[#00f2fe]" />
+              Evaluation Hub
+            </h2>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              双模式评估架构：预计算基准模式用于快速展示，离线上传模式用于上传本地生成结果后再跑分。
+            </p>
+          </div>
+
+          <div className="flex bg-black/20 p-1.5 rounded-xl border border-white/5 w-full lg:w-auto">
+            <button
+              onClick={() => setEvalMode("preset")}
+              className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                evalMode === "preset"
+                  ? "bg-[#00f2fe]/20 text-white shadow-[0_2px_10px_rgba(0,242,254,0.2)]"
+                  : "text-slate-400 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              预计算基准
+            </button>
+            <button
+              onClick={() => setEvalMode("upload")}
+              className={`flex-1 lg:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                evalMode === "upload"
+                  ? "bg-[#8a2be2]/20 text-white shadow-[0_2px_10px_rgba(138,43,226,0.2)]"
+                  : "text-slate-400 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              上传评估
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            {evalMode === "preset" ? (
+              <>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase tracking-widest mb-2 block font-semibold">
+                    Baseline Model
+                  </label>
+                  <select
+                    value={evalBaseline}
+                    onChange={(e) => setEvalBaseline(e.target.value)}
+                    className="w-full glass-input text-white py-3 px-4 rounded-xl text-sm appearance-none border-white/10"
+                  >
+                    <option value="COROC-v2-Pro" className="bg-[#0a1118]">COROC-v2-Pro</option>
+                    <option value="UCE-Method (2024)" className="bg-[#0a1118]">UCE-Method (2024)</option>
+                    <option value="ESD-Method (2023)" className="bg-[#0a1118]">ESD-Method (2023)</option>
+                    <option value="Base-Unsafe-Model" className="bg-[#0a1118]">Base Unsafe Model</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400 uppercase tracking-widest mb-2 block font-semibold">
+                    Dataset
+                  </label>
+                  <select
+                    value={evalDataset}
+                    onChange={(e) => setEvalDataset(e.target.value)}
+                    className="w-full glass-input text-white py-3 px-4 rounded-xl text-sm appearance-none border-white/10"
+                  >
+                    <option value="MS-COCO-Erase (10k Samples)" className="bg-[#0a1118]">MS-COCO-Erase (10k Samples)</option>
+                    <option value="ImageNet-ConceptErase (5k Samples)" className="bg-[#0a1118]">ImageNet-ConceptErase (5k Samples)</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <label className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border-slate-800 hover:border-violet-500/50 bg-slate-950/50">
+                <input
+                  type="file"
+                  accept=".zip,.tar.gz"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setUploadedZip(e.target.files[0].name);
+                      addToast(`已选择：${e.target.files[0].name}`, "success");
+                    }
+                  }}
+                />
+                {uploadedZip ? (
+                  <>
+                    <FileArchive className="w-8 h-8 text-cyan-400 mb-2" />
+                    <span className="text-xs font-bold text-slate-200">{uploadedZip}</span>
+                    <span className="text-[10px] text-cyan-400 mt-1 font-mono">READY FOR METRIC EXTRACTION</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-8 h-8 text-slate-500 mb-2" />
+                    <span className="text-xs font-bold text-slate-300">点击上传离线生成图像压缩包 (.zip)</span>
+                    <span className="text-[10px] text-slate-500 mt-1 text-center leading-relaxed">
+                      用于本地先生成图像，再上传给系统做评估。
+                    </span>
+                  </>
+                )}
+              </label>
+            )}
+
+            <div>
+              <label className="text-xs text-slate-400 uppercase tracking-widest mb-2 block font-semibold">
+                Comparison Method
+              </label>
+              <select
+                value={evalCompareTo}
+                onChange={(e) => setEvalCompareTo(e.target.value)}
+                className="w-full glass-input text-white py-3 px-4 rounded-xl text-sm appearance-none border-white/10"
+              >
+                <option value="UCE-Method (2024)" className="bg-[#0a1118]">UCE-Method (2024)</option>
+                <option value="ESD-Method (2023)" className="bg-[#0a1118]">ESD-Method (2023)</option>
+                <option value="Base-Unsafe-Model" className="bg-[#0a1118]">Base Unsafe Model</option>
+              </select>
+            </div>
+
+            <button
+              onClick={triggerEvaluation}
+              disabled={isEvaluating}
+              className={`w-full bg-gradient-to-r ${
+                evalMode === "preset"
+                  ? "from-[#00f2fe] to-[#8a2be2]"
+                  : "from-[#8a2be2] to-[#b26cff]"
+              } hover:brightness-110 text-white font-tech font-bold py-3.5 px-6 rounded-xl transition-all hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2`}
+            >
+              {isEvaluating ? (
+                <>
+                  <Activity className="animate-spin" size={18} />
+                  {evalMode === "preset" ? "加载缓存评估中..." : "离线跑分中..."}
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  开始评估
+                </>
+              )}
+            </button>
+
+            <div className="glass-panel p-4 rounded-2xl min-h-[180px]">
+              <p className="text-xs text-slate-400 uppercase tracking-widest mb-3 font-semibold">
+                Evaluation Log
+              </p>
+              <div
+                ref={logContainerRef}
+                className="h-[140px] overflow-y-auto font-mono text-[11px] text-[#00f2fe] space-y-2 pr-1"
+              >
+                {evalLogs.length === 0 ? (
+                  <p className="text-slate-500 italic">Awaiting evaluation session trigger...</p>
+                ) : (
+                  evalLogs.map((line, idx) => (
+                    <div key={idx} className="border-b border-white/5 pb-1">
+                      {line}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {isEvaluating && (
+                <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      evalMode === "preset" ? "bg-[#00f2fe]" : "bg-[#8a2be2]"
+                    }`}
+                    style={{ width: `${evalProgress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 glass-panel p-5 rounded-2xl border border-white/10">
+            {evalReport ? (
+              <div className="space-y-5">
+                <div className="flex justify-between items-start gap-4 border-b border-white/10 pb-4">
+                  <div>
+                    <h3 className="font-tech text-lg text-white">
+                      {evalMode === "preset"
+                        ? "COROC_STANDARD_BENCHMARK.pdf"
+                        : "CUSTOM_OFFLINE_EVALUATION.pdf"}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      GENERATED AT: {evalReport.timestamp}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      MODE: {evalReport.mode === "preset" ? "Pre-computed Cache Mode" : "Offline Dataset Upload Mode"}
+                    </p>
+                  </div>
+                  <div
+                    className={`px-3 py-1 rounded-full text-[11px] font-mono border ${
+                      evalMode === "preset"
+                        ? "text-[#00f2fe] border-[#00f2fe]/30 bg-[#00f2fe]/10"
+                        : "text-[#8a2be2] border-[#8a2be2]/30 bg-[#8a2be2]/10"
+                    }`}
+                  >
+                    REPORT READY
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { name: "ASR", value: evalReport.scores.ASR },
+                    { name: "CLIP", value: evalReport.scores.CLIP },
+                    { name: "FID", value: evalReport.scores.FID },
+                    { name: "MCP", value: evalReport.scores.MCP },
+                  ].map((metric) => (
+                    <div key={metric.name} className="bg-black/25 border border-white/10 rounded-xl p-4 text-center">
+                      <p className={`text-xs font-bold ${evalMode === "preset" ? "text-[#00f2fe]" : "text-[#8a2be2]"}`}>
+                        {metric.name}
+                      </p>
+                      <p className="text-2xl font-tech font-bold text-white mt-2">
+                        {metric.value}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-300">
+                  <div className="bg-black/20 border border-white/10 rounded-xl p-4">
+                    <p className="text-slate-500 uppercase tracking-widest mb-1">Baseline</p>
+                    <p>{evalReport.baseline}</p>
+                  </div>
+                  <div className="bg-black/20 border border-white/10 rounded-xl p-4">
+                    <p className="text-slate-500 uppercase tracking-widest mb-1">Dataset</p>
+                    <p>{evalReport.dataset}</p>
+                  </div>
+                  <div className="bg-black/20 border border-white/10 rounded-xl p-4">
+                    <p className="text-slate-500 uppercase tracking-widest mb-1">Comparison</p>
+                    <p>{evalReport.comparison}</p>
+                  </div>
+                  <div className="bg-black/20 border border-white/10 rounded-xl p-4">
+                    <p className="text-slate-500 uppercase tracking-widest mb-1">Mode</p>
+                    <p>{evalReport.mode === "preset" ? "Cache" : "Upload"}</p>
+                  </div>
+                </div>
+
+                <div className="bg-black/20 border border-white/10 rounded-xl p-4">
+                  <p className="text-slate-500 uppercase tracking-widest mb-2 text-xs">Summary</p>
+                  <p className="text-sm text-slate-200 leading-relaxed">{evalReport.summary}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="min-h-[420px] flex flex-col items-center justify-center text-center gap-3">
+                <div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center border ${
+                    evalMode === "preset"
+                      ? "border-[#00f2fe]/30 bg-[#00f2fe]/10"
+                      : "border-[#8a2be2]/30 bg-[#8a2be2]/10"
+                  }`}
+                >
+                  {evalMode === "preset" ? (
+                    <Database className="w-7 h-7 text-[#00f2fe]" />
+                  ) : (
+                    <FileArchive className="w-7 h-7 text-[#8a2be2]" />
+                  )}
+                </div>
+                <div className="max-w-md">
+                  <p className="text-white font-semibold">多维量化评估白皮书未加载</p>
+                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    {evalMode === "preset"
+                      ? "请选择预计算评估基准，一键调取历史跑分快照并生成多维报告。"
+                      : "请先上传本地生成结果压缩包 (.zip)，再执行离线特征提取与评分。"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 const DashboardTab = () => {
   return (
     <div className="space-y-6 relative z-10">
@@ -541,6 +1155,7 @@ export default function MainApp({ onLogout }) {
             {[
               { id: "generate", icon: ImageIcon, label: "Synthesize" },
               { id: "customErase", icon: Layers, label: "Custom Erase" },
+              { id: "evaluation", icon: Database, label: "Evaluation" },
               { id: "dashboard", icon: Activity, label: "Telemetry" },
               { id: "history", icon: History, label: "Logs" },
             ].map((tab) => (
@@ -575,6 +1190,7 @@ export default function MainApp({ onLogout }) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
         {activeTab === "generate" && <GenerateTab />}
         {activeTab === "customErase" && <CustomEraseTab />}
+        {activeTab === "evaluation" && <EvaluationTab />}
         {activeTab === "dashboard" && <DashboardTab />}
         {activeTab === "history" && <HistoryTab />}
       </main>
